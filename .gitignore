@@ -1,0 +1,5 @@
+/WoodukuClient/Library
+*.csproj
+/WoodukuClient/Temp
+/WoodukuClient/.vscode
+*.sln
