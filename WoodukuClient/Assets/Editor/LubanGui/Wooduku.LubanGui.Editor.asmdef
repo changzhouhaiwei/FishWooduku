@@ -1,0 +1,18 @@
+{
+    "name": "Wooduku.LubanGui.Editor",
+    "rootNamespace": "Luban.Editor",
+    "references": [
+        "GUID:a4865f1ab4504ed8a368670db22f409c"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

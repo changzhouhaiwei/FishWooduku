@@ -4,7 +4,7 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 26
-  productGUID: c84f51211cd6013499b09078c9376bdc
+  productGUID: 70633e6ef39266545828feebae73956a
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: DefaultCompany
-  productName: WoodukuClient
+  productName: NewFishFramework
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -142,7 +142,8 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 1.0
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: 11400000, guid: c1f48e18e61777c41b797aff8bec8416, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -692,14 +693,14 @@ PlayerSettings:
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: WoodukuClient
+  metroPackageName: NewFishFramework
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: WoodukuClient
+  metroApplicationDescription: NewFishFramework
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -768,10 +769,10 @@ PlayerSettings:
   apiCompatibilityLevel: 6
   activeInputHandler: 0
   windowsGamepadBackendHint: 0
-  cloudProjectId: bdc04d63-75a5-421d-9d3b-6a630d5db1dc
+  cloudProjectId: 1547e0f9-29bb-44b5-aca6-240629033733
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: WoodukuClient
+  projectName: NewFishFramework
   organizationId: changzhouhai
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

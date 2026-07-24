@@ -1,5 +1,11 @@
 /WoodukuClient/Library
 *.csproj
 /WoodukuClient/Temp
+/WoodukuClient/UserSettings
+/WoodukuClient/Logs
+*.log
+/WoodukuClient/Packages
 /WoodukuClient/.vscode
 *.sln
+_sync_robocopy.log
+/WoodukuProfile/output/
