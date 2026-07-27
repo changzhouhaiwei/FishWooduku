@@ -33,7 +33,19 @@ MonoBehaviour:
     enabled: 1
   - name: "\u82726"
     color: {r: 0.4, g: 0.6, b: 0.8, a: 1}
-    enabled: 1
+    enabled: 0
   - name: "\u82727"
     color: {r: 0.7, g: 0.7, b: 0.45, a: 1}
-    enabled: 1
+    enabled: 0
+  - name: "\u82728"
+    color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    enabled: 0
+  - name: "\u82729"
+    color: {r: 0.35, g: 0.55, b: 0.55, a: 1}
+    enabled: 0
+  - name: "\u827210"
+    color: {r: 0.8, g: 0.5, b: 0.3, a: 1}
+    enabled: 0
+  - name: "\u827211"
+    color: {r: 0.55, g: 0.35, b: 0.55, a: 1}
+    enabled: 0
