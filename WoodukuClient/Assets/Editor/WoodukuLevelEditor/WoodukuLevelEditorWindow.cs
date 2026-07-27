@@ -30,6 +30,18 @@ namespace Wooduku.LevelEditor
         private bool _isDraggingPaint;
         private string _exportPath;
 
+        // 识图
+        private string _imagePath = @"F:\SelfMaj\FishWooduku\WoodukuDoc\UIGame.jpg";
+        private Texture2D _imagePreview;
+        private WoodukuBoardImageRecognizer.CropNorm _crop = WoodukuBoardImageRecognizer.DefaultMobileCrop();
+        private bool _autoValidateAfterRecognize = true;
+        private Vector2 _imagePreviewScroll;
+
+        private void OnDestroy()
+        {
+            DestroyPreviewTexture();
+        }
+
         [MenuItem("自定义窗口/Wooduku 关卡编辑器", priority = 80)]
         private static void Open()
         {
@@ -56,6 +68,8 @@ namespace Wooduku.LevelEditor
             DrawHeader();
             EditorGUILayout.Space(8);
             DrawPaletteSection();
+            EditorGUILayout.Space(8);
+            DrawRecognizeSection();
             EditorGUILayout.Space(8);
             DrawBoardSection();
             EditorGUILayout.Space(8);
@@ -198,6 +212,255 @@ namespace Wooduku.LevelEditor
                                        (_paintColorIndex >= 0 && _paintColorIndex < _palette.slots.Count
                                            ? $"（{_palette.slots[_paintColorIndex].name}）"
                                            : ""));
+        }
+
+        private void DrawRecognizeSection()
+        {
+            EditorGUILayout.LabelField("识图导入", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "从玩法截图识别色区，写入当前棋盘。颜色按「现有已开启色板」最近匹配，不要求像素色完全一致。识别前请把 N 设成与截图一致（如 UIGame 为 6）。",
+                MessageType.Info);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                _imagePath = EditorGUILayout.TextField("图片路径", _imagePath);
+                if (GUILayout.Button("浏览…", GUILayout.Width(60)))
+                {
+                    var start = string.IsNullOrEmpty(_imagePath)
+                        ? Application.dataPath
+                        : Path.GetDirectoryName(_imagePath);
+                    var picked = EditorUtility.OpenFilePanel("选择关卡截图", start ?? "", "jpg,jpeg,png");
+                    if (!string.IsNullOrEmpty(picked))
+                    {
+                        _imagePath = picked;
+                        ReloadPreview();
+                    }
+                }
+
+                if (GUILayout.Button("加载预览", GUILayout.Width(80)))
+                {
+                    ReloadPreview();
+                }
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("自动框选棋盘", GUILayout.Width(120)))
+                {
+                    EnsurePreviewLoaded();
+                    if (_imagePreview != null)
+                    {
+                        _crop = WoodukuBoardImageRecognizer.AutoDetectCrop(_imagePreview);
+                        SetStatus(
+                            $"自动裁剪：L={_crop.Left:F2} R={_crop.Right:F2} T={_crop.Top:F2} B={_crop.Bottom:F2}",
+                            MessageType.Info);
+                    }
+                }
+
+                _autoValidateAfterRecognize = EditorGUILayout.ToggleLeft("识别后自动检测固有解",
+                    _autoValidateAfterRecognize, GUILayout.Width(180));
+            }
+
+            _crop.Left = EditorGUILayout.Slider("裁左", _crop.Left, 0f, 0.45f);
+            _crop.Right = EditorGUILayout.Slider("裁右", _crop.Right, 0f, 0.45f);
+            _crop.Top = EditorGUILayout.Slider("裁上", _crop.Top, 0f, 0.6f);
+            _crop.Bottom = EditorGUILayout.Slider("裁下", _crop.Bottom, 0f, 0.5f);
+
+            if (_imagePreview != null)
+            {
+                DrawImagePreviewWithCrop();
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("识别并写入当前配置", GUILayout.Height(30)))
+                {
+                    RecognizeFromImage();
+                }
+
+                if (GUILayout.Button("识别 UIGame.jpg", GUILayout.Height(30), GUILayout.Width(140)))
+                {
+                    _imagePath = @"F:\SelfMaj\FishWooduku\WoodukuDoc\UIGame.jpg";
+                    ReloadPreview();
+                    if (_imagePreview != null)
+                    {
+                        _crop = WoodukuBoardImageRecognizer.AutoDetectCrop(_imagePreview);
+                    }
+
+                    if (_size != 6)
+                    {
+                        ResizeBoard(6);
+                    }
+
+                    EnsureEnabledPaletteCount(_size);
+                    RecognizeFromImage();
+                }
+            }
+        }
+
+        private void DrawImagePreviewWithCrop()
+        {
+            const float maxW = 280f;
+            var aspect = _imagePreview.height / (float)_imagePreview.width;
+            var w = maxW;
+            var h = maxW * aspect;
+            _imagePreviewScroll = EditorGUILayout.BeginScrollView(_imagePreviewScroll, GUILayout.Height(Mathf.Min(h + 8f, 320f)));
+            var rect = GUILayoutUtility.GetRect(w, h, GUILayout.ExpandWidth(false));
+            GUI.DrawTexture(rect, _imagePreview, ScaleMode.StretchToFill);
+
+            // 裁剪框（显示坐标：Top 从上往下）
+            var x = rect.x + rect.width * _crop.Left;
+            var y = rect.y + rect.height * _crop.Top;
+            var rw = rect.width * (1f - _crop.Left - _crop.Right);
+            var rh = rect.height * (1f - _crop.Top - _crop.Bottom);
+            var cropRect = new Rect(x, y, rw, rh);
+            Handles.BeginGUI();
+            Handles.color = Color.red;
+            Handles.DrawSolidRectangleWithOutline(cropRect, new Color(1f, 0f, 0f, 0.08f), Color.red);
+            Handles.EndGUI();
+
+            // 格子辅助线
+            Handles.BeginGUI();
+            Handles.color = new Color(1f, 1f, 1f, 0.35f);
+            for (var i = 1; i < _size; i++)
+            {
+                var lx = cropRect.x + cropRect.width * i / _size;
+                var ly = cropRect.y + cropRect.height * i / _size;
+                Handles.DrawLine(new Vector3(lx, cropRect.y), new Vector3(lx, cropRect.yMax));
+                Handles.DrawLine(new Vector3(cropRect.x, ly), new Vector3(cropRect.xMax, ly));
+            }
+
+            Handles.EndGUI();
+            EditorGUILayout.EndScrollView();
+        }
+
+        private void ReloadPreview()
+        {
+            DestroyPreviewTexture();
+            _imagePreview = WoodukuBoardImageRecognizer.LoadTexture(_imagePath, out var err);
+            if (_imagePreview == null)
+            {
+                SetStatus("预览失败：" + err, MessageType.Error);
+            }
+            else
+            {
+                SetStatus($"已加载预览 {_imagePreview.width}×{_imagePreview.height}", MessageType.Info);
+            }
+
+            Repaint();
+        }
+
+        private void EnsurePreviewLoaded()
+        {
+            if (_imagePreview == null)
+            {
+                ReloadPreview();
+            }
+        }
+
+        private void DestroyPreviewTexture()
+        {
+            if (_imagePreview != null)
+            {
+                DestroyImmediate(_imagePreview);
+                _imagePreview = null;
+            }
+        }
+
+        private void RecognizeFromImage()
+        {
+            EnsurePalette();
+            EnsureEnabledPaletteCount(_size);
+            EnsurePreviewLoaded();
+            if (_imagePreview == null)
+            {
+                return;
+            }
+
+            var enabled = _palette.GetEnabledIndices();
+            enabled.Sort();
+            if (enabled.Count != _size)
+            {
+                SetStatus($"识图需要恰好开启 {_size} 种颜色（当前 {enabled.Count}）。", MessageType.Error);
+                return;
+            }
+
+            var colors = new List<Color>(_size);
+            for (var i = 0; i < enabled.Count; i++)
+            {
+                colors.Add(_palette.slots[enabled[i]].color);
+            }
+
+            var result = WoodukuBoardImageRecognizer.Recognize(
+                _imagePreview, _crop, _size, colors, enabled);
+            if (!result.Ok)
+            {
+                SetStatus("识图失败：" + result.Error, MessageType.Error);
+                return;
+            }
+
+            EnsureBoard(_size);
+            for (var i = 0; i < result.Regions.Length; i++)
+            {
+                _regions[i] = result.Regions[i];
+            }
+
+            _lastResult = null;
+            EditorUtility.SetDirty(_palette);
+
+            var msg =
+                $"识图完成：已写入 {_size}×{_size} 色区（映射到最近色板）。棋盘像素区 {result.BoardPixels.width}×{result.BoardPixels.height}。";
+            SetStatus(msg, MessageType.Info);
+
+            if (_autoValidateAfterRecognize)
+            {
+                RunValidate();
+                if (_statusType != MessageType.Error)
+                {
+                    SetStatus(msg + " " + _status, _statusType);
+                }
+            }
+
+            Repaint();
+        }
+
+        /// <summary>保证前 N 个色槽开启，其余可保持原状；若开启数不足则自动开启。</summary>
+        private void EnsureEnabledPaletteCount(int n)
+        {
+            _palette.EnsureDefaults(n);
+            var enabled = _palette.GetEnabledIndices();
+            if (enabled.Count == n)
+            {
+                return;
+            }
+
+            if (enabled.Count > n)
+            {
+                // 只保留最小的 N 个开启槽
+                enabled.Sort();
+                for (var i = 0; i < _palette.slots.Count; i++)
+                {
+                    _palette.slots[i].enabled = false;
+                }
+
+                for (var i = 0; i < n; i++)
+                {
+                    _palette.slots[enabled[i]].enabled = true;
+                }
+            }
+            else
+            {
+                for (var i = 0; i < _palette.slots.Count && enabled.Count < n; i++)
+                {
+                    if (!_palette.slots[i].enabled)
+                    {
+                        _palette.slots[i].enabled = true;
+                        enabled.Add(i);
+                    }
+                }
+            }
+
+            EditorUtility.SetDirty(_palette);
         }
 
         private void DrawBoardSection()
