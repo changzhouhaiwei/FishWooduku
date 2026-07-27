@@ -12,9 +12,21 @@ public class LoginUIBase : UIPanel
 
     protected override void OnBindCompsAndEvents()
     {
-        userDataVer = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(0, 0);
-        quateDescLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(1, 0);
-        quateNameLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(2, 0);
+        // Prefab 当前只绑定了 userDataVer；quote 文本节点缺失时保持 null
+        if (viewBehaviour != null && viewBehaviour.opElementList != null && viewBehaviour.opElementList.Count > 0)
+        {
+            userDataVer = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(0, 0);
+        }
+
+        if (viewBehaviour != null && viewBehaviour.opElementList != null && viewBehaviour.opElementList.Count > 1)
+        {
+            quateDescLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(1, 0);
+        }
+
+        if (viewBehaviour != null && viewBehaviour.opElementList != null && viewBehaviour.opElementList.Count > 2)
+        {
+            quateNameLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(2, 0);
+        }
     }
 
     protected override void OnUnbindCompsAndEvents()

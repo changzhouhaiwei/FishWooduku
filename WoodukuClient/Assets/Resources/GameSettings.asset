@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e3eb59da37147379201cb8179d0849b, type: 3}
   m_Name: GameSettings
   m_EditorClassIdentifier: 
-  logMode: 0
+  logMode: 1
   gmMode: 0
   game60: 60
   language: 0

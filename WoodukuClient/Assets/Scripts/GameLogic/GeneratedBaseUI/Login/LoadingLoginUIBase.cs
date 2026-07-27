@@ -11,8 +11,16 @@ public class LoadingLoginUIBase : UIPanel
 
     protected override void OnBindCompsAndEvents()
     {
-        quateNameLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(0, 0);
-        quateDescLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(1, 0);
+        // Prefab 当前 OpElementList 为空；缺失绑定时保持 null
+        if (viewBehaviour != null && viewBehaviour.opElementList != null && viewBehaviour.opElementList.Count > 0)
+        {
+            quateNameLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(0, 0);
+        }
+
+        if (viewBehaviour != null && viewBehaviour.opElementList != null && viewBehaviour.opElementList.Count > 1)
+        {
+            quateDescLb = viewBehaviour.GetComponentByIndexs<TextMeshProUGUI>(1, 0);
+        }
     }
 
     protected override void OnUnbindCompsAndEvents()
