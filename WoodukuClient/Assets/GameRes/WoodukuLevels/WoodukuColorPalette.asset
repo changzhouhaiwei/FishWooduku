@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c637edbf3b47f3341b380656451387f6, type: 3}
+  m_Name: WoodukuColorPalette
+  m_EditorClassIdentifier: 
+  slots:
+  - name: "\u82720"
+    color: {r: 0.55, g: 0.35, b: 0.22, a: 1}
+    enabled: 1
+  - name: "\u82721"
+    color: {r: 0.85, g: 0.7, b: 0.25, a: 1}
+    enabled: 1
+  - name: "\u82722"
+    color: {r: 0.9, g: 0.55, b: 0.65, a: 1}
+    enabled: 1
+  - name: "\u82723"
+    color: {r: 0.45, g: 0.7, b: 0.45, a: 1}
+    enabled: 1
+  - name: "\u82724"
+    color: {r: 0.65, g: 0.55, b: 0.85, a: 1}
+    enabled: 1
+  - name: "\u82725"
+    color: {r: 0.75, g: 0.4, b: 0.45, a: 1}
+    enabled: 1
+  - name: "\u82726"
+    color: {r: 0.4, g: 0.6, b: 0.8, a: 1}
+    enabled: 1
+  - name: "\u82727"
+    color: {r: 0.7, g: 0.7, b: 0.45, a: 1}
+    enabled: 1

@@ -661,7 +661,8 @@ PlayerSettings:
   webGLMemoryGeometricGrowthStep: 0.2
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Standalone: ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend: {}
@@ -769,10 +770,10 @@ PlayerSettings:
   apiCompatibilityLevel: 6
   activeInputHandler: 0
   windowsGamepadBackendHint: 0
-  cloudProjectId: 1547e0f9-29bb-44b5-aca6-240629033733
+  cloudProjectId: bdc04d63-75a5-421d-9d3b-6a630d5db1dc
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: NewFishFramework
+  projectName: WoodukuClient
   organizationId: changzhouhai
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
