@@ -1,5 +1,6 @@
 using FishFramework;
 using GameLogic.MainMenu;
+using GameLogic.Wooduku;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -20,6 +21,7 @@ public class GameSceneBootstrap : MonoBehaviour
         EnsureEventSystem();
         BindMainCameraToUI();
         SpawnMainMenu();
+        WoodukuGameplayView.EnsureSpawned();
     }
 
     private void OnDestroy()

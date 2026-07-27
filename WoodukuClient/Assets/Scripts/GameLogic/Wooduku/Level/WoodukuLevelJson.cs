@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text;
 using UnityEngine;
 
-namespace Wooduku.LevelEditor
+namespace GameLogic.Wooduku
 {
     [Serializable]
     public class WoodukuLevelFile
@@ -157,7 +157,6 @@ namespace Wooduku.LevelEditor
                 solutionCols = ReadIntArray(json, "solutionCols")
             };
 
-            // colors / solutionCells：导入时用 regions + 编辑器当前色板即可；颜色块尽量恢复 hex
             file.colors = ParseColors(json);
             if (file.solutionCols != null && file.solutionCols.Length == file.size)
             {

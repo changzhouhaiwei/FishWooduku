@@ -9,3 +9,4 @@
 *.sln
 _sync_robocopy.log
 /WoodukuProfile/output/
+/WoodukuClient/Logs

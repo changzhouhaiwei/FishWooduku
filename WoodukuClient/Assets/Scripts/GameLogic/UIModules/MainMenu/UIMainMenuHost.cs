@@ -1,5 +1,7 @@
 using FishFramework;
+using GameLogic.Wooduku;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GameLogic.MainMenu
 {
@@ -14,6 +16,7 @@ namespace GameLogic.MainMenu
         private UIWidgetBehaviour _travelResidentView;
         private UIShopView _shopView;
         private UIMapTravelView _mapTravelView;
+        private Button _playButton;
         private bool _bound;
 
         public void Bind(UIViewBehaviour rootBehaviour)
@@ -44,6 +47,12 @@ namespace GameLogic.MainMenu
             if (_tabPager != null)
             {
                 _tabPager.PageChanged -= OnTabPageChanged;
+            }
+
+            if (_playButton != null)
+            {
+                _playButton.onClick.RemoveListener(OnPlayClicked);
+                _playButton = null;
             }
 
             // 驻留 Widget 与主页同树，勿 CloseView（会 Object.Destroy 子节点）
@@ -82,6 +91,29 @@ namespace GameLogic.MainMenu
 
             _tabPager.PageChanged -= OnTabPageChanged;
             _tabPager.PageChanged += OnTabPageChanged;
+
+            _playButton = FindChildRect("Play Button")?.GetComponent<Button>();
+            if (_playButton != null)
+            {
+                _playButton.onClick.RemoveListener(OnPlayClicked);
+                _playButton.onClick.AddListener(OnPlayClicked);
+            }
+            else
+            {
+                Debug.LogWarning("[UIMainMenuHost] Play Button not found.");
+            }
+        }
+
+        private void OnPlayClicked()
+        {
+            var gameplay = WoodukuGameplayView.EnsureSpawned();
+            if (gameplay == null)
+            {
+                Debug.LogError("[UIMainMenuHost] WoodukuGameplayView spawn failed.");
+                return;
+            }
+
+            gameplay.EnterLevel(1);
         }
 
         protected override void OnDestroyed()
