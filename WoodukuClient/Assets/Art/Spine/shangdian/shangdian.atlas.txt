@@ -1,0 +1,14 @@
+shangdian.png
+size:646,272
+filter:Linear,Linear
+pma:true
+bgL_2
+bounds:273,15,297,255
+offsets:21,14,342,287
+star
+bounds:572,191,79,72
+offsets:14,14,113,102
+rotate:90
+title_bgL
+bounds:2,2,269,268
+offsets:12,12,293,292
