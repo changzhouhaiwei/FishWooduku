@@ -11,7 +11,8 @@ using UnityEngine.UI;
 public class GameSceneBootstrap : MonoBehaviour
 {
     private const string MainMenuPrefabPath = "Assets/GameRes/Prefabs/TUI/Canvas/UI Main Menu.prefab";
-    private const int MainMenuSortingOrder = 50;
+    // 常驻主页是普通 Panel 的背景层，所有 OpenPanel 都应显示在它上方。
+    private const int MainMenuSortingOrder = -1;
 
     private GameObject _mainMenuInstance;
 

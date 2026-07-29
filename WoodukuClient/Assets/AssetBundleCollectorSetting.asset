@@ -38,14 +38,6 @@ MonoBehaviour:
         FilterRuleName: CollectAll
         AssetTags: font
         UserData: 
-      - CollectPath: Assets/GameRes/Fonts
-        CollectorGUID: 
-        CollectorType: 0
-        AddressRuleName: AddressByFileName
-        PackRuleName: PackDirectory
-        FilterRuleName: CollectAll
-        AssetTags: font
-        UserData: 
     - GroupName: GameRes
       GroupDesc: Game resources
       AssetTags: 

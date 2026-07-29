@@ -1144,13 +1144,23 @@ namespace Wooduku.LevelEditor
             var enabled = _palette.GetEnabledIndices();
             enabled.Sort();
             var colorCount = enabled.Count;
+            var addedColorCount = 0;
             if (_size < 4)
             {
                 SetStatus($"边长 N={_size} 无法满足猫咪八邻不接触规则，随机生成需要 N≥4。", MessageType.Error);
                 return;
             }
 
-            if (colorCount != _size)
+            if (colorCount < _size)
+            {
+                addedColorCount = _size - colorCount;
+                EnsureEnabledPaletteCount(_size);
+                enabled = _palette.GetEnabledIndices();
+                enabled.Sort();
+                colorCount = enabled.Count;
+            }
+
+            if (colorCount > _size)
             {
                 SetStatus($"随机生成要求颜色数量等于边长 N：当前 N={_size}，已开启 {colorCount} 种颜色。", MessageType.Error);
                 return;
@@ -1181,8 +1191,9 @@ namespace Wooduku.LevelEditor
             }
 
             _lastResult = result;
+            var colorMessage = addedColorCount > 0 ? $"，自动补充 {addedColorCount} 种颜色" : string.Empty;
             SetStatus(
-                $"已按边长 N={_size} 随机生成唯一解关卡（扩张 {acceptedExpansions} 格，校验 {attempts} 次）。",
+                $"已按边长 N={_size} 随机生成唯一解关卡{colorMessage}（扩张 {acceptedExpansions} 格，校验 {attempts} 次）。",
                 MessageType.Info);
             Repaint();
         }
@@ -1291,10 +1302,14 @@ namespace Wooduku.LevelEditor
 
             // 初始状态由 N-1 个单格色区锁定唯一解，再随机侵占背景色。
             // 每一步都重新校验，只有仍然四连通且保持唯一解的扩张才会保留。
-            var targetBackgroundSize = size * 2;
+            var targetBackgroundSize = System.Math.Max(size * 2, (size * size + 2) / 3);
+            var consecutiveFailures = 0;
+            var maxConsecutiveFailures = size * 30;
             var frontier = new List<int>();
             var neighborColors = new List<int>(4);
-            while (attempts < maxAttempts && regionSizes[backgroundColor] > targetBackgroundSize)
+            while (attempts < maxAttempts &&
+                   consecutiveFailures < maxConsecutiveFailures &&
+                   regionSizes[backgroundColor] > targetBackgroundSize)
             {
                 frontier.Clear();
                 for (var i = 0; i < regionCells.Length; i++)
@@ -1344,10 +1359,12 @@ namespace Wooduku.LevelEditor
                     regionSizes[backgroundColor]--;
                     regionSizes[newColor]++;
                     acceptedExpansions++;
+                    consecutiveFailures = 0;
                 }
                 else
                 {
                     regionCells[cell] = backgroundColor;
+                    consecutiveFailures++;
                 }
             }
 

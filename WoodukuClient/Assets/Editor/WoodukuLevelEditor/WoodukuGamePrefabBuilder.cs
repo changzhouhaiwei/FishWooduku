@@ -71,12 +71,20 @@ namespace Wooduku.LevelEditor
                 new Vector2(-180, -40), new Vector2(180, 40), "通关！", 42);
 
             var winBack = Make("WinBackButton", winPanel, new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f),
-                new Vector2(-120, -36), new Vector2(120, 36));
+                new Vector2(-200, -36), new Vector2(-20, 36));
             var winBackImg = winBack.gameObject.AddComponent<Image>();
             winBackImg.color = new Color(0.85f, 0.7f, 0.45f, 1f);
             var winBackBtn = winBack.gameObject.AddComponent<Button>();
             winBackBtn.targetGraphic = winBackImg;
             MakeTmp("WinBackLabel", winBack, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, "返回主页", 30);
+
+            var winNext = Make("WinNextButton", winPanel, new Vector2(0.5f, 0.28f), new Vector2(0.5f, 0.28f),
+                new Vector2(20, -36), new Vector2(200, 36));
+            var winNextImg = winNext.gameObject.AddComponent<Image>();
+            winNextImg.color = new Color(0.65f, 0.8f, 0.45f, 1f);
+            var winNextBtn = winNext.gameObject.AddComponent<Button>();
+            winNextBtn.targetGraphic = winNextImg;
+            MakeTmp("WinNextLabel", winNext, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, "下一关", 30);
 
             PrefabUtility.SaveAsPrefabAsset(root, Path);
             Object.DestroyImmediate(root);

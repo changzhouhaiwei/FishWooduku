@@ -1,5 +1,6 @@
 using FishFramework;
 using GameLogic.Wooduku;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,7 @@ namespace GameLogic.MainMenu
     public sealed class UIMainMenuHost : UIView
     {
         private Button _playButton;
+        private TextMeshProUGUI _playLevelLabel;
         private bool _bound;
 
         public void Bind(UIViewBehaviour rootBehaviour)
@@ -44,6 +46,7 @@ namespace GameLogic.MainMenu
                 _playButton = null;
             }
 
+            _playLevelLabel = null;
             _bound = false;
             viewBehaviour = null;
             gameObject = null;
@@ -53,6 +56,7 @@ namespace GameLogic.MainMenu
         protected override void OnCreating()
         {
             _playButton = FindChildRect("Play Button")?.GetComponent<Button>();
+            _playLevelLabel = FindChildRect("Play Text")?.GetComponent<TextMeshProUGUI>();
             if (_playButton != null)
             {
                 _playButton.onClick.RemoveListener(OnPlayClicked);
@@ -61,6 +65,16 @@ namespace GameLogic.MainMenu
             else
             {
                 Debug.LogWarning("[UIMainMenuHost] Play Button not found.");
+            }
+
+            RefreshLevelProgress();
+        }
+
+        public void RefreshLevelProgress()
+        {
+            if (_playLevelLabel != null)
+            {
+                _playLevelLabel.text = $"Level {WoodukuLevelProgress.CurrentLevelId}";
             }
         }
 
@@ -73,7 +87,7 @@ namespace GameLogic.MainMenu
                 return;
             }
 
-            gameplay.EnterLevel(1);
+            gameplay.EnterLevel(WoodukuLevelProgress.CurrentLevelId);
         }
 
         private RectTransform FindChildRect(string objectName)

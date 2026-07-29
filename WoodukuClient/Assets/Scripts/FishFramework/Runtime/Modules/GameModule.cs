@@ -31,6 +31,12 @@ namespace FishFramework
         public IEnumerator Initialize()
         {
             yield return StartCoroutine(Resource.InitializeAsync());
+            if (!ResourceModule.IsInitialized)
+            {
+                Debug.LogError("[GameModule] Resource initialization failed.");
+                yield break;
+            }
+
             UI.InitRoot();
             yield return StartCoroutine(Setting.Initialize());
             Application.lowMemory += OnLowMemory;

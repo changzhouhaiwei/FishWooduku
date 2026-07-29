@@ -34,9 +34,9 @@ public sealed class GmHotkey : MonoBehaviour
             return;
         }
 
-        if (GameModule.UI == null)
+        if (GameModule.UI == null || GameModule.UI.UIRoot == null)
         {
-            Debug.LogWarning("[GM] GameModule.UI 未就绪，无法打开 GM。");
+            Debug.LogWarning("[GM] UI 尚未 InitRoot，稍后再按 F1。");
             return;
         }
 
@@ -46,9 +46,9 @@ public sealed class GmHotkey : MonoBehaviour
             return;
         }
 
+        // 与参考工程一致：走默认 Panel 层 OpenPanel<T>()（内部会 Open）
         Debug.Log("[GM] OpenPanel<GMLevelChooseUI> (F1)");
-        var panel = GameModule.UI.OpenPanel<GMLevelChooseUI>(PanelLayer.GM, PanelOpenType.Single);
-        panel?.Open();
+        GameModule.UI.OpenPanel<GMLevelChooseUI>();
     }
 
     private static bool CanOpenGm()

@@ -22,6 +22,7 @@ namespace GameLogic.Wooduku
 
         [SerializeField] private Button backButton;
         [SerializeField] private Button winBackButton;
+        [SerializeField] private Button winNextButton;
         [SerializeField] private TextMeshProUGUI progressLabel;
         [SerializeField] private TextMeshProUGUI levelLabel;
         [SerializeField] private RectTransform boardRoot;
@@ -146,6 +147,7 @@ namespace GameLogic.Wooduku
 
             backButton = FindButton("BackButton");
             winBackButton = FindButton("WinBackButton");
+            winNextButton = FindButton("WinNextButton");
             progressLabel = FindTmp("ProgressLabel");
             levelLabel = FindTmp("LevelLabel");
             boardRoot = FindRect("BoardRoot");
@@ -168,6 +170,29 @@ namespace GameLogic.Wooduku
                 winBackButton.onClick.RemoveListener(ExitToMenu);
                 winBackButton.onClick.AddListener(ExitToMenu);
             }
+
+            if (winNextButton != null)
+            {
+                winNextButton.onClick.RemoveListener(EnterNextLevel);
+                winNextButton.onClick.AddListener(EnterNextLevel);
+            }
+        }
+
+        private void EnterNextLevel()
+        {
+            if (_session == null)
+            {
+                return;
+            }
+
+            var nextLevelId = _session.LevelId + 1;
+            if (nextLevelId > WoodukuLevelProgress.LastLevelId)
+            {
+                ExitToMenu();
+                return;
+            }
+
+            EnterLevel(nextLevelId);
         }
 
         private static void SetMainMenuVisible(bool visible)
@@ -499,6 +524,23 @@ namespace GameLogic.Wooduku
         private void OnCleared()
         {
             RefreshHud();
+            WoodukuLevelProgress.AdvanceAfterClear(_session.LevelId);
+            var hasNextLevel = _session.LevelId < WoodukuLevelProgress.LastLevelId;
+            if (winNextButton != null)
+            {
+                winNextButton.gameObject.SetActive(hasNextLevel);
+            }
+
+            if (winBackButton != null)
+            {
+                var backRect = winBackButton.transform as RectTransform;
+                if (backRect != null)
+                {
+                    backRect.offsetMin = hasNextLevel ? new Vector2(-200f, -36f) : new Vector2(-120f, -36f);
+                    backRect.offsetMax = hasNextLevel ? new Vector2(-20f, 36f) : new Vector2(120f, 36f);
+                }
+            }
+
             if (winOverlay != null)
             {
                 winOverlay.SetActive(true);

@@ -25,6 +25,11 @@ namespace GameLogic.MainMenu
             Debug.Log("[UIMainMenu] Host bound to resident root.");
         }
 
+        private void OnEnable()
+        {
+            _host?.RefreshLevelProgress();
+        }
+
         private void OnDestroy()
         {
             _host?.Unbind();
