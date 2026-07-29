@@ -14,6 +14,7 @@ namespace Wooduku.LevelEditor
     {
         private const string DefaultLevelDir = "Assets/GameRes/WoodukuLevels";
         private const string DefaultPalettePath = "Assets/GameRes/WoodukuLevels/WoodukuColorPalette.asset";
+        private const string LastOpenedLevelKey = "Wooduku.LevelEditor.LastOpenedLevelPath";
 
         private int _levelId = 1;
         private int _size = 4;
@@ -30,6 +31,8 @@ namespace Wooduku.LevelEditor
         private float _cellPx = 36f;
         private bool _isDraggingPaint;
         private string _exportPath;
+        private int _levelCount;
+        private int _maxLevelId;
 
         // 识图
         private string _imagePath = @"F:\SelfMaj\FishWooduku\WoodukuDoc\UIGame.jpg";
@@ -56,7 +59,14 @@ namespace Wooduku.LevelEditor
         {
             EnsurePalette();
             EnsureBoard(_size);
+            RefreshLevelStats();
             _exportPath = Path.Combine(DefaultLevelDir, $"level_{_levelId:D3}.json").Replace('\\', '/');
+
+            var lastOpenedPath = EditorPrefs.GetString(LastOpenedLevelKey, string.Empty);
+            if (!string.IsNullOrEmpty(lastOpenedPath))
+            {
+                ImportJsonFromPath(lastOpenedPath, false);
+            }
         }
 
         private void OnGUI()
@@ -75,8 +85,6 @@ namespace Wooduku.LevelEditor
             DrawBoardSection();
             EditorGUILayout.Space(8);
             DrawValidateSection();
-            EditorGUILayout.Space(8);
-            DrawExportSection();
 
             EditorGUILayout.EndScrollView();
         }
@@ -86,8 +94,47 @@ namespace Wooduku.LevelEditor
             EditorGUILayout.LabelField("关卡基本信息", EditorStyles.boldLabel);
             using (new EditorGUILayout.HorizontalScope())
             {
-                _levelId = EditorGUILayout.IntField("关卡 ID", _levelId);
-                _hintCount = EditorGUILayout.IntField("提示次数", Mathf.Max(0, _hintCount));
+                EditorGUILayout.LabelField($"总关卡数：{_levelCount}", GUILayout.Width(90));
+
+                EditorGUILayout.LabelField("关卡 ID", GUILayout.Width(48));
+                EditorGUI.BeginChangeCheck();
+                var newLevelId = EditorGUILayout.IntField(_levelId, GUILayout.Width(56));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _levelId = Mathf.Max(1, newLevelId);
+                    _exportPath = BuildLevelPath(_levelId);
+                }
+
+                if (GUILayout.Button("新建关卡", GUILayout.Width(90)))
+                {
+                    CreateNewLevel();
+                }
+
+                if (GUILayout.Button("导入 JSON", GUILayout.Width(90)))
+                {
+                    ImportJson();
+                }
+
+                if (GUILayout.Button("导出 JSON", GUILayout.Width(90)))
+                {
+                    ExportJson(requireUnique: true);
+                }
+
+                GUI.enabled = _levelId > 1;
+                if (GUILayout.Button("上一关", GUILayout.Width(70)))
+                {
+                    OpenAdjacentLevel(-1);
+                }
+
+                GUI.enabled = true;
+                if (GUILayout.Button("下一关", GUILayout.Width(70)))
+                {
+                    OpenAdjacentLevel(1);
+                }
+
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.LabelField("提示次数", GUILayout.Width(52));
+                _hintCount = Mathf.Max(0, EditorGUILayout.IntField(_hintCount, GUILayout.Width(48)));
             }
 
             EditorGUI.BeginChangeCheck();
@@ -635,53 +682,6 @@ namespace Wooduku.LevelEditor
             }
         }
 
-        private void DrawExportSection()
-        {
-            EditorGUILayout.LabelField("导出 / 导入 JSON", EditorStyles.boldLabel);
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                _exportPath = EditorGUILayout.TextField("路径", _exportPath);
-                if (GUILayout.Button("…", GUILayout.Width(28)))
-                {
-                    EnsureDir(DefaultLevelDir);
-                    var abs = EditorUtility.SaveFilePanel(
-                        "导出关卡 JSON",
-                        Path.GetFullPath(DefaultLevelDir),
-                        $"level_{_levelId:D3}.json",
-                        "json");
-                    if (!string.IsNullOrEmpty(abs))
-                    {
-                        _exportPath = AbsoluteToAssetPath(abs);
-                    }
-                }
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUI.enabled = _lastResult != null && _lastResult.HasUniqueSolution;
-                if (GUILayout.Button("导出 JSON（须唯一解）", GUILayout.Height(28)))
-                {
-                    ExportJson(requireUnique: true);
-                }
-
-                GUI.enabled = true;
-                if (GUILayout.Button("导出 JSON（允许非唯一）", GUILayout.Height(28)))
-                {
-                    if (_lastResult == null)
-                    {
-                        RunValidate();
-                    }
-
-                    ExportJson(requireUnique: false);
-                }
-
-                if (GUILayout.Button("导入 JSON", GUILayout.Height(28)))
-                {
-                    ImportJson();
-                }
-            }
-        }
-
         private void RunValidate()
         {
             var map = BuildExportColorMap(out var enabledSlots, out var err);
@@ -844,6 +844,8 @@ namespace Wooduku.LevelEditor
                 }
 
                 File.WriteAllText(abs, WoodukuLevelJson.ToJson(file));
+                RememberOpenedLevel(abs);
+                RefreshLevelStats();
                 SetStatus($"已导出：{abs}", MessageType.Info);
                 return;
             }
@@ -854,24 +856,59 @@ namespace Wooduku.LevelEditor
             File.WriteAllText(full, WoodukuLevelJson.ToJson(file));
             AssetDatabase.Refresh();
             _exportPath = path;
+            RememberOpenedLevel(path);
+            RefreshLevelStats();
             SetStatus($"已导出：{path}", MessageType.Info);
         }
 
         private void ImportJson()
         {
             EnsureDir(DefaultLevelDir);
-            var abs = EditorUtility.OpenFilePanel("导入关卡 JSON", Path.GetFullPath(DefaultLevelDir), "json");
+            var currentPath = ToAbsolutePath(_exportPath);
+            var initialDirectory = File.Exists(currentPath)
+                ? Path.GetDirectoryName(currentPath)
+                : Path.GetFullPath(DefaultLevelDir);
+            var abs = EditorUtility.OpenFilePanel("导入关卡 JSON", initialDirectory, "json");
             if (string.IsNullOrEmpty(abs))
             {
                 return;
             }
 
-            var json = File.ReadAllText(abs);
-            var file = WoodukuLevelJson.FromJson(json);
-            if (file.size < 2 || file.regions == null || file.regions.Length != file.size * file.size)
+            ImportJsonFromPath(abs, true);
+        }
+
+        private bool ImportJsonFromPath(string path, bool showMissingError)
+        {
+            var abs = ToAbsolutePath(path);
+            if (!File.Exists(abs))
+            {
+                if (showMissingError)
+                {
+                    SetStatus($"导入失败：找不到关卡文件 {path}", MessageType.Error);
+                }
+
+                return false;
+            }
+
+            WoodukuLevelFile file;
+            try
+            {
+                var json = File.ReadAllText(abs);
+                file = WoodukuLevelJson.FromJson(json);
+            }
+            catch (System.Exception ex)
+            {
+                SetStatus($"导入失败：{ex.Message}", MessageType.Error);
+                return false;
+            }
+
+            if (file == null ||
+                file.size < 2 ||
+                file.regions == null ||
+                file.regions.Length != file.size * file.size)
             {
                 SetStatus("导入失败：JSON 格式无效或 regions 长度不匹配。", MessageType.Error);
-                return;
+                return false;
             }
 
             _levelId = file.id;
@@ -905,9 +942,86 @@ namespace Wooduku.LevelEditor
             }
 
             _exportPath = AbsoluteToAssetPath(abs);
+            RememberOpenedLevel(_exportPath);
             _lastResult = null;
             RunValidate();
             SetStatus($"已导入：{abs}", _statusType);
+            return true;
+        }
+
+        private void OpenAdjacentLevel(int offset)
+        {
+            var targetId = _levelId + offset;
+            if (targetId < 1)
+            {
+                return;
+            }
+
+            var targetPath = BuildLevelPath(targetId);
+            ImportJsonFromPath(targetPath, true);
+        }
+
+        private void CreateNewLevel()
+        {
+            RefreshLevelStats();
+            _levelId = _maxLevelId + 1;
+            _exportPath = Path.Combine(DefaultLevelDir, $"level_{_levelId:D3}.json").Replace('\\', '/');
+
+            for (var i = 0; i < _regions.Length; i++)
+            {
+                _regions[i] = -1;
+            }
+
+            _lastResult = null;
+            SetStatus($"已新建关卡 {_levelId}，请编辑并导出 JSON。", MessageType.Info);
+        }
+
+        private void RefreshLevelStats()
+        {
+            _levelCount = 0;
+            _maxLevelId = 0;
+
+            var directory = Path.GetFullPath(DefaultLevelDir);
+            if (!Directory.Exists(directory))
+            {
+                return;
+            }
+
+            var files = Directory.GetFiles(directory, "level_*.json", SearchOption.TopDirectoryOnly);
+            _levelCount = files.Length;
+            foreach (var file in files)
+            {
+                var name = Path.GetFileNameWithoutExtension(file);
+                var idText = name.Substring("level_".Length);
+                if (int.TryParse(idText, out var id))
+                {
+                    _maxLevelId = Mathf.Max(_maxLevelId, id);
+                }
+            }
+        }
+
+        private string BuildLevelPath(int levelId)
+        {
+            var currentPath = string.IsNullOrEmpty(_exportPath)
+                ? DefaultLevelDir
+                : Path.GetDirectoryName(_exportPath.Replace('\\', '/'));
+            var directory = string.IsNullOrEmpty(currentPath) ? DefaultLevelDir : currentPath;
+            return Path.Combine(directory, $"level_{levelId:D3}.json").Replace('\\', '/');
+        }
+
+        private static string ToAbsolutePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return string.Empty;
+            }
+
+            return Path.GetFullPath(path);
+        }
+
+        private static void RememberOpenedLevel(string path)
+        {
+            EditorPrefs.SetString(LastOpenedLevelKey, path.Replace('\\', '/'));
         }
 
         private void EnsurePalette()

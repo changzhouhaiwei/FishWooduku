@@ -14,22 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slots:
   - name: "\u82720"
-    color: {r: 0.55, g: 0.35, b: 0.22, a: 1}
+    color: {r: 0.54901963, g: 0.34901962, b: 0.21960784, a: 1}
     enabled: 1
   - name: "\u82721"
-    color: {r: 0.85, g: 0.7, b: 0.25, a: 1}
+    color: {r: 0.8509804, g: 0.69803923, b: 0.2509804, a: 1}
     enabled: 1
   - name: "\u82722"
-    color: {r: 0.9, g: 0.55, b: 0.65, a: 1}
+    color: {r: 0.9019608, g: 0.54901963, b: 0.6509804, a: 1}
     enabled: 1
   - name: "\u82723"
-    color: {r: 0.45, g: 0.7, b: 0.45, a: 1}
+    color: {r: 0.4509804, g: 0.69803923, b: 0.4509804, a: 1}
     enabled: 1
   - name: "\u82724"
-    color: {r: 0.65, g: 0.55, b: 0.85, a: 1}
+    color: {r: 0.6509804, g: 0.54901963, b: 0.8509804, a: 1}
     enabled: 1
   - name: "\u82725"
-    color: {r: 0.75, g: 0.4, b: 0.45, a: 1}
+    color: {r: 0.7490196, g: 0.4, b: 0.4509804, a: 1}
     enabled: 1
   - name: "\u82726"
     color: {r: 0.4, g: 0.6, b: 0.8, a: 1}

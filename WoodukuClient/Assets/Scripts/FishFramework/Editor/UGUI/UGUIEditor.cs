@@ -79,7 +79,7 @@ namespace FishFramework
             txtObj.GetComponent<RectTransform>().localScale = Vector3.one;
             txtObj.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 30);
             var text = txtObj.GetComponent<TextMeshProUGUI>();
-            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/AdobeHeitiStd-RSDF.asset");
+            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset");
             text.raycastTarget = false;
             text.richText = false;
             text.fontSize = 24;
@@ -168,7 +168,7 @@ namespace FishFramework
             txtObj.GetComponent<RectTransform>().anchorMax = Vector2.one;
             txtObj.GetComponent<RectTransform>().sizeDelta = Vector2.zero;
             var text = txtObj.GetComponent<TextMeshProUGUI>();
-            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/AdobeHeitiStd-RSDF.asset");
+            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset");
             text.raycastTarget = false;
             text.richText = false;
             text.fontSize = 24;
@@ -253,7 +253,7 @@ namespace FishFramework
             txtObj.GetComponent<RectTransform>().anchorMax = Vector2.one;
             txtObj.GetComponent<RectTransform>().sizeDelta = Vector2.zero;
             var text = txtObj.GetComponent<TextMeshProUGUI>();
-            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/AdobeHeitiStd-RSDF.asset");
+            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset");
             text.raycastTarget = false;
             text.richText = false;
             text.fontSize = 24;

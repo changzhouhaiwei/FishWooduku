@@ -25,6 +25,27 @@ MonoBehaviour:
     AutoCollectShaders: 1
     IgnoreRuleName: NormalIgnoreRule
     Groups:
+    - GroupName: Font
+      GroupDesc: Font source TTF and TMP font assets (character-collection based)
+      AssetTags: font
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/Font
+        CollectorGUID: 
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: font
+        UserData: 
+      - CollectPath: Assets/GameRes/Fonts
+        CollectorGUID: 
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: font
+        UserData: 
     - GroupName: GameRes
       GroupDesc: Game resources
       AssetTags: 
