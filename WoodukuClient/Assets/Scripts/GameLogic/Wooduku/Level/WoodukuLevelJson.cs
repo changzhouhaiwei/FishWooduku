@@ -5,12 +5,22 @@ using UnityEngine;
 
 namespace GameLogic.Wooduku
 {
+    public enum WoodukuLevelDifficulty
+    {
+        Normal = 0,
+        Hard = 1,
+        VeryHard = 2
+    }
+
     [Serializable]
     public class WoodukuLevelFile
     {
         public int id = 1;
         public int size = 4;
         public int hintCount = 5;
+        public WoodukuLevelDifficulty difficulty;
+        public int difficultyScore;
+        public string sourceName;
         public bool hasUniqueSolution;
         public int solutionCount;
         /// <summary>启用颜色条目（按 id 0..N-1）。</summary>
@@ -20,6 +30,8 @@ namespace GameLogic.Wooduku
         /// <summary>解：每行放置的列；无解时为空。</summary>
         public int[] solutionCols;
         public WoodukuCellRef[] solutionCells;
+        /// <summary>开局已经放置且不可移除的皇后。</summary>
+        public WoodukuCellRef[] fixedQueenCells;
     }
 
     [Serializable]
@@ -52,6 +64,9 @@ namespace GameLogic.Wooduku
                 AppendField(sb, indent, "id", file.id, true);
                 AppendField(sb, indent, "size", file.size, true);
                 AppendField(sb, indent, "hintCount", file.hintCount, true);
+                AppendField(sb, indent, "difficulty", (int)file.difficulty, true);
+                AppendField(sb, indent, "difficultyScore", file.difficultyScore, true);
+                AppendField(sb, indent, "sourceName", file.sourceName ?? "", true);
                 AppendField(sb, indent, "hasUniqueSolution", file.hasUniqueSolution, true);
                 AppendField(sb, indent, "solutionCount", file.solutionCount, true);
 
@@ -93,6 +108,22 @@ namespace GameLogic.Wooduku
                 AppendArray(sb, indent, file.solutionCells?.Length ?? 0, i =>
                 {
                     var cell = file.solutionCells[i];
+                    AppendObject(sb, indent + 1, () =>
+                    {
+                        AppendField(sb, indent + 1, "r", cell.r, true);
+                        AppendField(sb, indent + 1, "c", cell.c, false);
+                    });
+                });
+                sb.Append(',');
+                if (pretty)
+                {
+                    sb.Append('\n');
+                }
+
+                AppendKey(sb, indent, "fixedQueenCells");
+                AppendArray(sb, indent, file.fixedQueenCells?.Length ?? 0, i =>
+                {
+                    var cell = file.fixedQueenCells[i];
                     AppendObject(sb, indent + 1, () =>
                     {
                         AppendField(sb, indent + 1, "r", cell.r, true);
@@ -151,10 +182,14 @@ namespace GameLogic.Wooduku
                 id = ReadInt(json, "id", 1),
                 size = ReadInt(json, "size", 4),
                 hintCount = ReadInt(json, "hintCount", 5),
+                difficulty = (WoodukuLevelDifficulty)ReadInt(json, "difficulty", 0),
+                difficultyScore = ReadInt(json, "difficultyScore", 0),
+                sourceName = ReadString(json, "sourceName", ""),
                 hasUniqueSolution = ReadBool(json, "hasUniqueSolution", false),
                 solutionCount = ReadInt(json, "solutionCount", 0),
                 regions = ReadIntArray(json, "regions"),
-                solutionCols = ReadIntArray(json, "solutionCols")
+                solutionCols = ReadIntArray(json, "solutionCols"),
+                fixedQueenCells = ParseCells(json, "fixedQueenCells")
             };
 
             file.colors = ParseColors(json);
@@ -168,6 +203,56 @@ namespace GameLogic.Wooduku
             }
 
             return file;
+        }
+
+        private static WoodukuCellRef[] ParseCells(string json, string key)
+        {
+            var pattern = $"\"{key}\"";
+            var idx = json.IndexOf(pattern, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                return Array.Empty<WoodukuCellRef>();
+            }
+
+            var arrStart = json.IndexOf('[', idx);
+            if (arrStart < 0)
+            {
+                return Array.Empty<WoodukuCellRef>();
+            }
+
+            var arrEnd = json.IndexOf(']', arrStart);
+            if (arrEnd < 0)
+            {
+                return Array.Empty<WoodukuCellRef>();
+            }
+
+            var slice = json.Substring(arrStart, arrEnd - arrStart + 1);
+            var list = new System.Collections.Generic.List<WoodukuCellRef>();
+            var pos = 0;
+            while (true)
+            {
+                var objStart = slice.IndexOf('{', pos);
+                if (objStart < 0)
+                {
+                    break;
+                }
+
+                var objEnd = slice.IndexOf('}', objStart);
+                if (objEnd < 0)
+                {
+                    break;
+                }
+
+                var obj = slice.Substring(objStart, objEnd - objStart + 1);
+                list.Add(new WoodukuCellRef
+                {
+                    r = ReadInt(obj, "r", -1),
+                    c = ReadInt(obj, "c", -1)
+                });
+                pos = objEnd + 1;
+            }
+
+            return list.ToArray();
         }
 
         private static WoodukuColorEntry[] ParseColors(string json)

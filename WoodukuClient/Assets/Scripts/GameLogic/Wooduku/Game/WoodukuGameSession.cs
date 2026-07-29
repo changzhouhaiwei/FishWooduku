@@ -12,6 +12,7 @@ namespace GameLogic.Wooduku
         private readonly WoodukuLevelFile _level;
         private readonly WoodukuCellMark[] _marks;
         private readonly HashSet<long> _solutionKeys;
+        private readonly HashSet<long> _fixedQueenKeys;
         private readonly Color[] _palette;
 
         public WoodukuGameSession(WoodukuLevelFile level)
@@ -30,6 +31,7 @@ namespace GameLogic.Wooduku
 
             _marks = new WoodukuCellMark[cellCount];
             _solutionKeys = new HashSet<long>();
+            _fixedQueenKeys = new HashSet<long>();
             if (_level.solutionCells != null)
             {
                 foreach (var cell in _level.solutionCells)
@@ -45,6 +47,21 @@ namespace GameLogic.Wooduku
                 }
             }
 
+            if (_level.fixedQueenCells != null)
+            {
+                foreach (var cell in _level.fixedQueenCells)
+                {
+                    if (!InBounds(cell.r, cell.c) || !IsSolution(cell.r, cell.c))
+                    {
+                        continue;
+                    }
+
+                    _fixedQueenKeys.Add(Key(cell.r, cell.c));
+                    _marks[Index(cell.r, cell.c)] = WoodukuCellMark.Confirmed;
+                }
+            }
+
+            RecalcFound();
             _palette = BuildPalette(_level);
         }
 
@@ -75,12 +92,19 @@ namespace GameLogic.Wooduku
 
         public bool IsSolution(int r, int c) => _solutionKeys.Contains(Key(r, c));
 
+        public bool IsFixedQueen(int r, int c) => _fixedQueenKeys.Contains(Key(r, c));
+
         /// <summary>
         /// 单击：Confirmed→None；None↔Exclude。
         /// </summary>
         public bool TryToggleExclude(int r, int c)
         {
             if (!InBounds(r, c))
+            {
+                return false;
+            }
+
+            if (IsFixedQueen(r, c))
             {
                 return false;
             }
@@ -110,6 +134,12 @@ namespace GameLogic.Wooduku
             isCorrect = false;
             if (!InBounds(r, c))
             {
+                return false;
+            }
+
+            if (IsFixedQueen(r, c))
+            {
+                isCorrect = true;
                 return false;
             }
 

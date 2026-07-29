@@ -19,6 +19,10 @@ namespace Wooduku.LevelEditor
         private int _levelId = 1;
         private int _size = 4;
         private int _hintCount = 5;
+        private WoodukuLevelDifficulty _difficulty;
+        private int _difficultyScore;
+        private string _sourceName = string.Empty;
+        private WoodukuCellRef[] _fixedQueenCells = System.Array.Empty<WoodukuCellRef>();
         private int[] _regions;
         private int _paintColorIndex;
         private WoodukuColorPaletteAsset _palette;
@@ -33,6 +37,8 @@ namespace Wooduku.LevelEditor
         private string _exportPath;
         private int _levelCount;
         private int _maxLevelId;
+        private WoodukuLevelCatalogAsset _packedCatalog;
+        private WoodukuLevelPackAsset _activePack;
 
         // 识图
         private string _imagePath = @"F:\SelfMaj\FishWooduku\WoodukuDoc\UIGame.jpg";
@@ -59,8 +65,15 @@ namespace Wooduku.LevelEditor
         {
             EnsurePalette();
             EnsureBoard(_size);
+            _packedCatalog = AssetDatabase.LoadAssetAtPath<WoodukuLevelCatalogAsset>(
+                WoodukuLevelRepository.CatalogPath);
             RefreshLevelStats();
             _exportPath = Path.Combine(DefaultLevelDir, $"level_{_levelId:D3}.json").Replace('\\', '/');
+
+            if (_packedCatalog != null && TryLoadPackedLevel(_levelId))
+            {
+                return;
+            }
 
             var lastOpenedPath = EditorPrefs.GetString(LastOpenedLevelKey, string.Empty);
             if (!string.IsNullOrEmpty(lastOpenedPath))
@@ -100,7 +113,7 @@ namespace Wooduku.LevelEditor
                 return;
             }
 
-            ExportJson(requireUnique: true);
+            SaveCurrentLevel();
             current.Use();
         }
 
@@ -120,6 +133,11 @@ namespace Wooduku.LevelEditor
                     _exportPath = BuildLevelPath(_levelId);
                 }
 
+                if (_packedCatalog != null && GUILayout.Button("跳转", GUILayout.Width(52)))
+                {
+                    TryLoadPackedLevel(_levelId);
+                }
+
                 if (GUILayout.Button("新建关卡", GUILayout.Width(90)))
                 {
                     CreateNewLevel();
@@ -130,9 +148,9 @@ namespace Wooduku.LevelEditor
                     ImportJson();
                 }
 
-                if (GUILayout.Button("导出 JSON", GUILayout.Width(90)))
+                if (GUILayout.Button(_packedCatalog != null ? "保存关卡" : "导出 JSON", GUILayout.Width(90)))
                 {
-                    ExportJson(requireUnique: true);
+                    SaveCurrentLevel();
                 }
 
                 GUI.enabled = _levelId > 1;
@@ -152,10 +170,22 @@ namespace Wooduku.LevelEditor
                 _hintCount = Mathf.Max(0, EditorGUILayout.IntField(_hintCount, GUILayout.Width(48)));
             }
 
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                _difficulty = (WoodukuLevelDifficulty)EditorGUILayout.EnumPopup(
+                    "难度标识", _difficulty, GUILayout.Width(260));
+                _difficultyScore = EditorGUILayout.IntField(
+                    "难度分", _difficultyScore, GUILayout.Width(180));
+                EditorGUILayout.LabelField(
+                    string.IsNullOrEmpty(_sourceName) ? "原创关卡" : $"来源：{_sourceName}");
+            }
+
             EditorGUI.BeginChangeCheck();
             var newSize = EditorGUILayout.IntSlider("边长 N（N×N）", _size, 2, 12);
             if (EditorGUI.EndChangeCheck() && newSize != _size)
             {
+                _fixedQueenCells = System.Array.Empty<WoodukuCellRef>();
+                _sourceName = string.Empty;
                 ResizeBoard(newSize);
             }
 
@@ -585,13 +615,14 @@ namespace Wooduku.LevelEditor
                     EditorGUI.DrawRect(new Rect(cell.xMax - 1f, cell.y, 1f, cell.height), Color.black);
 
                     var isSol = solCols != null && solCols[r] == c;
-                    var text = isSol ? "猫" : label;
+                    var isFixed = IsFixedQueen(r, c);
+                    var text = isFixed ? "锁" : isSol ? "猫" : label;
                     if (!string.IsNullOrEmpty(text))
                     {
                         var style = new GUIStyle(EditorStyles.boldLabel)
                         {
                             alignment = TextAnchor.MiddleCenter,
-                            normal = { textColor = isSol ? Color.white : Color.black }
+                            normal = { textColor = isSol || isFixed ? Color.white : Color.black }
                         };
                         GUI.Label(cell, text, style);
                     }
@@ -732,7 +763,8 @@ namespace Wooduku.LevelEditor
                 logical[i] = lid;
             }
 
-            _lastResult = WoodukuLevelSolver.Analyze(_size, logical, enabledSlots.Count);
+            _lastResult = WoodukuLevelSolver.Analyze(
+                _size, logical, enabledSlots.Count, _fixedQueenCells);
             if (!_lastResult.BoardValid)
             {
                 SetStatus("棋盘无效：" + _lastResult.BoardError, MessageType.Error);
@@ -781,8 +813,44 @@ namespace Wooduku.LevelEditor
             return map;
         }
 
-        private void ExportJson(bool requireUnique)
+        private void SaveCurrentLevel()
         {
+            if (_packedCatalog == null)
+            {
+                ExportJson(requireUnique: true);
+                return;
+            }
+
+            if (!TryBuildCurrentLevelFile(requireUnique: true, out var file))
+            {
+                return;
+            }
+
+            var entry = _packedCatalog.FindPack(_levelId);
+            if (entry == null)
+            {
+                SetStatus($"无法保存：关卡 {_levelId} 不在分包目录中。", MessageType.Error);
+                return;
+            }
+
+            var pack = AssetDatabase.LoadAssetAtPath<WoodukuLevelPackAsset>(entry.assetPath);
+            var index = _levelId - entry.firstLevelId;
+            if (pack == null || index < 0 || index >= pack.levels.Count)
+            {
+                SetStatus($"无法保存：分包资源无效 {entry.assetPath}。", MessageType.Error);
+                return;
+            }
+
+            pack.levels[index] = file;
+            _activePack = pack;
+            EditorUtility.SetDirty(pack);
+            AssetDatabase.SaveAssets();
+            SetStatus($"已保存关卡 {_levelId}：{entry.assetPath}", MessageType.Info);
+        }
+
+        private bool TryBuildCurrentLevelFile(bool requireUnique, out WoodukuLevelFile file)
+        {
+            file = null;
             if (_lastResult == null || !_lastResult.BoardValid)
             {
                 RunValidate();
@@ -790,21 +858,21 @@ namespace Wooduku.LevelEditor
 
             if (_lastResult == null || !_lastResult.BoardValid)
             {
-                SetStatus("无法导出：棋盘未通过校验。", MessageType.Error);
-                return;
+                SetStatus("无法保存：棋盘未通过校验。", MessageType.Error);
+                return false;
             }
 
             if (requireUnique && !_lastResult.HasUniqueSolution)
             {
-                SetStatus("无法导出：不是固有解（唯一解）。", MessageType.Error);
-                return;
+                SetStatus("无法保存：不是固有解（唯一解）。", MessageType.Error);
+                return false;
             }
 
             var map = BuildExportColorMap(out var enabledSlots, out var err);
             if (map == null)
             {
                 SetStatus(err, MessageType.Error);
-                return;
+                return false;
             }
 
             var logical = new int[_regions.Length];
@@ -826,28 +894,37 @@ namespace Wooduku.LevelEditor
                 };
             }
 
-            WoodukuCellRef[] cells = null;
-            if (_lastResult.FirstSolutionCols != null)
+            var cells = new WoodukuCellRef[_size];
+            for (var r = 0; r < _size; r++)
             {
-                cells = new WoodukuCellRef[_size];
-                for (var r = 0; r < _size; r++)
-                {
-                    cells[r] = new WoodukuCellRef { r = r, c = _lastResult.FirstSolutionCols[r] };
-                }
+                cells[r] = new WoodukuCellRef { r = r, c = _lastResult.FirstSolutionCols[r] };
             }
 
-            var file = new WoodukuLevelFile
+            file = new WoodukuLevelFile
             {
                 id = _levelId,
                 size = _size,
                 hintCount = _hintCount,
+                difficulty = _difficulty,
+                difficultyScore = _difficultyScore,
+                sourceName = _sourceName,
                 hasUniqueSolution = _lastResult.HasUniqueSolution,
                 solutionCount = _lastResult.SolutionCount,
                 colors = colors,
                 regions = logical,
                 solutionCols = _lastResult.FirstSolutionCols,
-                solutionCells = cells
+                solutionCells = cells,
+                fixedQueenCells = CloneCells(_fixedQueenCells)
             };
+            return true;
+        }
+
+        private void ExportJson(bool requireUnique)
+        {
+            if (!TryBuildCurrentLevelFile(requireUnique, out var file))
+            {
+                return;
+            }
 
             var path = string.IsNullOrEmpty(_exportPath)
                 ? Path.Combine(DefaultLevelDir, $"level_{_levelId:D3}.json").Replace('\\', '/')
@@ -933,6 +1010,10 @@ namespace Wooduku.LevelEditor
 
             _levelId = file.id;
             _hintCount = file.hintCount;
+            _difficulty = file.difficulty;
+            _difficultyScore = file.difficultyScore;
+            _sourceName = file.sourceName ?? string.Empty;
+            _fixedQueenCells = CloneCells(file.fixedQueenCells);
             ResizeBoard(file.size);
 
             // 将逻辑色写回色板前 N 个开启槽
@@ -977,6 +1058,11 @@ namespace Wooduku.LevelEditor
                 return;
             }
 
+            if (_packedCatalog != null && TryLoadPackedLevel(targetId))
+            {
+                return;
+            }
+
             var targetPath = BuildLevelPath(targetId);
             ImportJsonFromPath(targetPath, true);
         }
@@ -986,6 +1072,10 @@ namespace Wooduku.LevelEditor
             RefreshLevelStats();
             _levelId = _maxLevelId + 1;
             _exportPath = Path.Combine(DefaultLevelDir, $"level_{_levelId:D3}.json").Replace('\\', '/');
+            _difficulty = WoodukuLevelDifficulty.Normal;
+            _difficultyScore = 0;
+            _sourceName = string.Empty;
+            _fixedQueenCells = System.Array.Empty<WoodukuCellRef>();
 
             for (var i = 0; i < _regions.Length; i++)
             {
@@ -998,6 +1088,13 @@ namespace Wooduku.LevelEditor
 
         private void RefreshLevelStats()
         {
+            if (_packedCatalog != null && _packedCatalog.totalLevelCount > 0)
+            {
+                _levelCount = _packedCatalog.totalLevelCount;
+                _maxLevelId = _packedCatalog.totalLevelCount;
+                return;
+            }
+
             _levelCount = 0;
             _maxLevelId = 0;
 
@@ -1018,6 +1115,105 @@ namespace Wooduku.LevelEditor
                     _maxLevelId = Mathf.Max(_maxLevelId, id);
                 }
             }
+        }
+
+        private bool TryLoadPackedLevel(int levelId)
+        {
+            var entry = _packedCatalog?.FindPack(levelId);
+            if (entry == null)
+            {
+                SetStatus($"分包目录中不存在关卡 {levelId}。", MessageType.Warning);
+                return false;
+            }
+
+            var pack = AssetDatabase.LoadAssetAtPath<WoodukuLevelPackAsset>(entry.assetPath);
+            if (pack == null || !pack.TryGetLevel(levelId, out var file) || file == null)
+            {
+                SetStatus($"无法加载分包关卡 {levelId}：{entry.assetPath}", MessageType.Error);
+                return false;
+            }
+
+            _activePack = pack;
+            _levelId = file.id;
+            _hintCount = file.hintCount;
+            _difficulty = file.difficulty;
+            _difficultyScore = file.difficultyScore;
+            _sourceName = file.sourceName ?? string.Empty;
+            _fixedQueenCells = CloneCells(file.fixedQueenCells);
+            ResizeBoard(file.size);
+
+            _palette.EnsureDefaults(_size);
+            for (var i = 0; i < _palette.slots.Count; i++)
+            {
+                _palette.slots[i].enabled = i < _size;
+            }
+
+            if (file.colors != null)
+            {
+                for (var i = 0; i < file.colors.Length && i < _palette.slots.Count; i++)
+                {
+                    var color = file.colors[i];
+                    if (color == null)
+                    {
+                        continue;
+                    }
+
+                    _palette.slots[i].name = color.name;
+                    _palette.slots[i].color =
+                        WoodukuLevelJson.HexToColor(color.hex, _palette.slots[i].color);
+                }
+            }
+
+            for (var i = 0; i < file.regions.Length; i++)
+            {
+                _regions[i] = file.regions[i];
+            }
+
+            _exportPath = string.Empty;
+            _lastResult = null;
+            RunValidate();
+            SetStatus(
+                $"已加载分包关卡 {levelId}/{_packedCatalog.totalLevelCount}，" +
+                $"难度={_difficulty}，难度分={_difficultyScore}。",
+                _statusType);
+            Repaint();
+            return true;
+        }
+
+        private bool IsFixedQueen(int row, int col)
+        {
+            if (_fixedQueenCells == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _fixedQueenCells.Length; i++)
+            {
+                var cell = _fixedQueenCells[i];
+                if (cell != null && cell.r == row && cell.c == col)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static WoodukuCellRef[] CloneCells(WoodukuCellRef[] source)
+        {
+            if (source == null || source.Length == 0)
+            {
+                return System.Array.Empty<WoodukuCellRef>();
+            }
+
+            var result = new WoodukuCellRef[source.Length];
+            for (var i = 0; i < source.Length; i++)
+            {
+                var cell = source[i];
+                result[i] = cell == null ? null : new WoodukuCellRef { r = cell.r, c = cell.c };
+            }
+
+            return result;
         }
 
         private string BuildLevelPath(int levelId)

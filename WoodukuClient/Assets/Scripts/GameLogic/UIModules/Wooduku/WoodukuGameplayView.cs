@@ -225,17 +225,14 @@ namespace GameLogic.Wooduku
 
         private bool TryLoadSession(int levelId)
         {
-            var path = $"Assets/GameRes/WoodukuLevels/level_{levelId:D3}.json";
-            var textAsset = ResourceModule.LoadAsset<TextAsset>(path);
-            if (textAsset == null)
+            if (!WoodukuLevelRepository.TryLoadLevel(levelId, out var file))
             {
-                Debug.LogError($"[WoodukuGameplay] Failed to load level: {path}");
+                Debug.LogError($"[WoodukuGameplay] Failed to load level: {levelId}");
                 return false;
             }
 
             try
             {
-                var file = WoodukuLevelJson.FromJson(textAsset.text);
                 _session = new WoodukuGameSession(file);
                 return true;
             }

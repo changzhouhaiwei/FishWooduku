@@ -1,0 +1,6 @@
+Source: Queens Master 2.3.0
+UnityVersion: 6000.3.15f1
+NormalizedLevels: 4105
+ImportedLevels: 4105
+Packs: 17
+RejectedLevels: 0

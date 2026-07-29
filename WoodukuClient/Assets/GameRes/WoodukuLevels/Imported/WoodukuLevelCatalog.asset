@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: WoodukuLevelCatalog
+  m_EditorClassIdentifier: GameLogic:GameLogic.Wooduku:WoodukuLevelCatalogAsset
+  totalLevelCount: 4105
+  levelsPerPack: 256
+  packs:
+  - firstLevelId: 1
+    lastLevelId: 256
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_01.asset
+  - firstLevelId: 257
+    lastLevelId: 512
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_02.asset
+  - firstLevelId: 513
+    lastLevelId: 768
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_03.asset
+  - firstLevelId: 769
+    lastLevelId: 1024
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_04.asset
+  - firstLevelId: 1025
+    lastLevelId: 1280
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_05.asset
+  - firstLevelId: 1281
+    lastLevelId: 1536
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_06.asset
+  - firstLevelId: 1537
+    lastLevelId: 1792
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_07.asset
+  - firstLevelId: 1793
+    lastLevelId: 2048
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_08.asset
+  - firstLevelId: 2049
+    lastLevelId: 2304
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_09.asset
+  - firstLevelId: 2305
+    lastLevelId: 2560
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_10.asset
+  - firstLevelId: 2561
+    lastLevelId: 2816
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_11.asset
+  - firstLevelId: 2817
+    lastLevelId: 3072
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_12.asset
+  - firstLevelId: 3073
+    lastLevelId: 3328
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_13.asset
+  - firstLevelId: 3329
+    lastLevelId: 3584
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_14.asset
+  - firstLevelId: 3585
+    lastLevelId: 3840
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_15.asset
+  - firstLevelId: 3841
+    lastLevelId: 4096
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_16.asset
+  - firstLevelId: 4097
+    lastLevelId: 4105
+    assetPath: Assets/GameRes/WoodukuLevels/Imported/WoodukuLevelPack_17.asset

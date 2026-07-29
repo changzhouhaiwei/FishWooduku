@@ -8,7 +8,7 @@ namespace GameLogic.Wooduku
     public static class WoodukuLevelProgress
     {
         public const int FirstLevelId = 1;
-        public const int LastLevelId = 10;
+        public static int LastLevelId => Mathf.Max(FirstLevelId, WoodukuLevelRepository.TotalLevelCount);
 
         private const string CurrentLevelKey = "Wooduku_CurrentLevelId";
 

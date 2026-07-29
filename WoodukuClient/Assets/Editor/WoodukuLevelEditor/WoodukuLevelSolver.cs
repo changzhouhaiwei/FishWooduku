@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using GameLogic.Wooduku;
 
 namespace Wooduku.LevelEditor
 {
@@ -23,6 +24,15 @@ namespace Wooduku.LevelEditor
         /// expectedColorCount：启用的颜色种数，须等于 size。
         /// </summary>
         public static Result Analyze(int size, int[] regions, int expectedColorCount)
+        {
+            return Analyze(size, regions, expectedColorCount, null);
+        }
+
+        public static Result Analyze(
+            int size,
+            int[] regions,
+            int expectedColorCount,
+            IReadOnlyList<WoodukuCellRef> fixedQueenCells)
         {
             var result = new Result();
             if (size < 2 || size > 12)
@@ -93,7 +103,49 @@ namespace Wooduku.LevelEditor
             var colUsed = new bool[size];
             var colorUsed = new bool[size];
             var placeCol = new int[size];
-            Search(size, regions, 0, colUsed, colorUsed, placeCol, solutions, maxSolutions: 2);
+            var requiredCols = new int[size];
+            for (var row = 0; row < size; row++)
+            {
+                requiredCols[row] = -1;
+            }
+
+            if (fixedQueenCells != null)
+            {
+                for (var i = 0; i < fixedQueenCells.Count; i++)
+                {
+                    var cell = fixedQueenCells[i];
+                    if (cell == null ||
+                        cell.r < 0 ||
+                        cell.r >= size ||
+                        cell.c < 0 ||
+                        cell.c >= size)
+                    {
+                        result.BoardValid = false;
+                        result.BoardError = "预置皇后坐标越界。";
+                        return result;
+                    }
+
+                    if (requiredCols[cell.r] >= 0 && requiredCols[cell.r] != cell.c)
+                    {
+                        result.BoardValid = false;
+                        result.BoardError = $"第 {cell.r} 行存在多个预置皇后。";
+                        return result;
+                    }
+
+                    requiredCols[cell.r] = cell.c;
+                }
+            }
+
+            Search(
+                size,
+                regions,
+                requiredCols,
+                0,
+                colUsed,
+                colorUsed,
+                placeCol,
+                solutions,
+                maxSolutions: 2);
 
             result.SolutionCount = solutions.Count;
             if (solutions.Count > 0)
@@ -195,6 +247,7 @@ namespace Wooduku.LevelEditor
         private static void Search(
             int size,
             int[] regions,
+            int[] requiredCols,
             int row,
             bool[] colUsed,
             bool[] colorUsed,
@@ -213,7 +266,9 @@ namespace Wooduku.LevelEditor
                 return;
             }
 
-            for (var col = 0; col < size; col++)
+            var firstCol = requiredCols[row] >= 0 ? requiredCols[row] : 0;
+            var lastCol = requiredCols[row] >= 0 ? requiredCols[row] : size - 1;
+            for (var col = firstCol; col <= lastCol; col++)
             {
                 if (colUsed[col])
                 {
@@ -234,7 +289,16 @@ namespace Wooduku.LevelEditor
                 colUsed[col] = true;
                 colorUsed[color] = true;
                 placeCol[row] = col;
-                Search(size, regions, row + 1, colUsed, colorUsed, placeCol, solutions, maxSolutions);
+                Search(
+                    size,
+                    regions,
+                    requiredCols,
+                    row + 1,
+                    colUsed,
+                    colorUsed,
+                    placeCol,
+                    solutions,
+                    maxSolutions);
                 colUsed[col] = false;
                 colorUsed[color] = false;
             }
