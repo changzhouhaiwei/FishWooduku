@@ -73,6 +73,7 @@ namespace Wooduku.LevelEditor
         {
             EnsurePalette();
             EnsureBoard(_size);
+            HandleKeyboardShortcuts();
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
 
@@ -87,6 +88,20 @@ namespace Wooduku.LevelEditor
             DrawValidateSection();
 
             EditorGUILayout.EndScrollView();
+        }
+
+        private void HandleKeyboardShortcuts()
+        {
+            var current = Event.current;
+            if (current.type != EventType.KeyDown ||
+                current.keyCode != KeyCode.S ||
+                (!current.control && !current.command))
+            {
+                return;
+            }
+
+            ExportJson(requireUnique: true);
+            current.Use();
         }
 
         private void DrawHeader()
@@ -160,6 +175,11 @@ namespace Wooduku.LevelEditor
                 if (GUILayout.Button("按行填充 0..N-1（调试）", GUILayout.Width(160)))
                 {
                     FillDebugRows();
+                }
+
+                if (GUILayout.Button("按颜色数随机生成关卡", GUILayout.Width(170)))
+                {
+                    GenerateRandomLevel();
                 }
             }
         }
@@ -1117,6 +1137,252 @@ namespace Wooduku.LevelEditor
 
             _lastResult = null;
             SetStatus("已按行填充调试色区（通常无固有解，仅便于看色）。", MessageType.Info);
+        }
+
+        private void GenerateRandomLevel()
+        {
+            var enabled = _palette.GetEnabledIndices();
+            enabled.Sort();
+            var colorCount = enabled.Count;
+            if (_size < 4)
+            {
+                SetStatus($"边长 N={_size} 无法满足猫咪八邻不接触规则，随机生成需要 N≥4。", MessageType.Error);
+                return;
+            }
+
+            if (colorCount != _size)
+            {
+                SetStatus($"随机生成要求颜色数量等于边长 N：当前 N={_size}，已开启 {colorCount} 种颜色。", MessageType.Error);
+                return;
+            }
+
+            const int maxAttempts = 5000;
+            var random = new System.Random();
+            var solutionCols = BuildRandomSolution(_size, random);
+            if (solutionCols == null ||
+                !TryBuildRandomUniqueRegions(
+                    _size,
+                    solutionCols,
+                    random,
+                    maxAttempts,
+                    out var logicalRegions,
+                    out var result,
+                    out var attempts,
+                    out var acceptedExpansions))
+            {
+                _lastResult = null;
+                SetStatus($"随机生成失败：无法构造 N={_size} 的唯一解关卡。", MessageType.Warning);
+                return;
+            }
+
+            for (var i = 0; i < logicalRegions.Length; i++)
+            {
+                _regions[i] = enabled[logicalRegions[i]];
+            }
+
+            _lastResult = result;
+            SetStatus(
+                $"已按边长 N={_size} 随机生成唯一解关卡（扩张 {acceptedExpansions} 格，校验 {attempts} 次）。",
+                MessageType.Info);
+            Repaint();
+        }
+
+        private static int[] BuildRandomSolution(int size, System.Random random)
+        {
+            var result = new int[size];
+            var used = new bool[size];
+            return PlaceRow(0) ? result : null;
+
+            bool PlaceRow(int row)
+            {
+                if (row == size)
+                {
+                    return true;
+                }
+
+                var candidates = new List<int>(size);
+                for (var col = 0; col < size; col++)
+                {
+                    candidates.Add(col);
+                }
+
+                Shuffle(candidates, random);
+                foreach (var col in candidates)
+                {
+                    if (used[col] || row > 0 && System.Math.Abs(col - result[row - 1]) <= 1)
+                    {
+                        continue;
+                    }
+
+                    used[col] = true;
+                    result[row] = col;
+                    if (PlaceRow(row + 1))
+                    {
+                        return true;
+                    }
+
+                    used[col] = false;
+                }
+
+                return false;
+            }
+        }
+
+        private static bool TryBuildRandomUniqueRegions(
+            int size,
+            int[] solutionCols,
+            System.Random random,
+            int maxAttempts,
+            out int[] regions,
+            out WoodukuLevelSolver.Result result,
+            out int attempts,
+            out int acceptedExpansions)
+        {
+            regions = null;
+            result = null;
+            attempts = 0;
+            acceptedExpansions = 0;
+
+            var colors = new List<int>(size);
+            for (var color = 0; color < size; color++)
+            {
+                colors.Add(color);
+            }
+
+            var backgroundColor = -1;
+            var backgroundSeed = -1;
+            for (var setupAttempt = 0; setupAttempt < 64; setupAttempt++)
+            {
+                Shuffle(colors, random);
+                var backgroundRow = random.Next(size);
+                backgroundColor = colors[backgroundRow];
+                backgroundSeed = backgroundRow * size + solutionCols[backgroundRow];
+
+                regions = new int[size * size];
+                for (var i = 0; i < regions.Length; i++)
+                {
+                    regions[i] = backgroundColor;
+                }
+
+                for (var row = 0; row < size; row++)
+                {
+                    regions[row * size + solutionCols[row]] = colors[row];
+                }
+
+                result = WoodukuLevelSolver.Analyze(size, regions, size);
+                if (result.HasUniqueSolution)
+                {
+                    break;
+                }
+            }
+
+            if (result == null || !result.HasUniqueSolution)
+            {
+                return false;
+            }
+
+            // 避免在 local function 中直接捕获 out 参数 regions
+            var regionCells = regions;
+            var regionSizes = new int[size];
+            for (var i = 0; i < regionCells.Length; i++)
+            {
+                regionSizes[regionCells[i]]++;
+            }
+
+            // 初始状态由 N-1 个单格色区锁定唯一解，再随机侵占背景色。
+            // 每一步都重新校验，只有仍然四连通且保持唯一解的扩张才会保留。
+            var targetBackgroundSize = size * 2;
+            var frontier = new List<int>();
+            var neighborColors = new List<int>(4);
+            while (attempts < maxAttempts && regionSizes[backgroundColor] > targetBackgroundSize)
+            {
+                frontier.Clear();
+                for (var i = 0; i < regionCells.Length; i++)
+                {
+                    if (i != backgroundSeed &&
+                        regionCells[i] == backgroundColor &&
+                        HasNonBackgroundNeighbor(i))
+                    {
+                        frontier.Add(i);
+                    }
+                }
+
+                if (frontier.Count == 0)
+                {
+                    break;
+                }
+
+                var cell = frontier[random.Next(frontier.Count)];
+                neighborColors.Clear();
+                AddNeighborColor(cell - size, cell / size > 0);
+                AddNeighborColor(cell + size, cell / size < size - 1);
+                AddNeighborColor(cell - 1, cell % size > 0);
+                AddNeighborColor(cell + 1, cell % size < size - 1);
+
+                var smallestSize = int.MaxValue;
+                for (var i = 0; i < neighborColors.Count; i++)
+                {
+                    smallestSize = System.Math.Min(smallestSize, regionSizes[neighborColors[i]]);
+                }
+
+                for (var i = neighborColors.Count - 1; i >= 0; i--)
+                {
+                    if (regionSizes[neighborColors[i]] != smallestSize)
+                    {
+                        neighborColors.RemoveAt(i);
+                    }
+                }
+
+                var newColor = neighborColors[random.Next(neighborColors.Count)];
+                regionCells[cell] = newColor;
+                attempts++;
+
+                var candidateResult = WoodukuLevelSolver.Analyze(size, regionCells, size);
+                if (candidateResult.HasUniqueSolution)
+                {
+                    result = candidateResult;
+                    regionSizes[backgroundColor]--;
+                    regionSizes[newColor]++;
+                    acceptedExpansions++;
+                }
+                else
+                {
+                    regionCells[cell] = backgroundColor;
+                }
+            }
+
+            return true;
+
+            bool HasNonBackgroundNeighbor(int index)
+            {
+                var row = index / size;
+                var col = index % size;
+                return row > 0 && regionCells[index - size] != backgroundColor ||
+                       row < size - 1 && regionCells[index + size] != backgroundColor ||
+                       col > 0 && regionCells[index - 1] != backgroundColor ||
+                       col < size - 1 && regionCells[index + 1] != backgroundColor;
+            }
+
+            void AddNeighborColor(int index, bool inBounds)
+            {
+                if (!inBounds ||
+                    regionCells[index] == backgroundColor ||
+                    neighborColors.Contains(regionCells[index]))
+                {
+                    return;
+                }
+
+                neighborColors.Add(regionCells[index]);
+            }
+        }
+
+        private static void Shuffle<T>(List<T> list, System.Random random)
+        {
+            for (var i = list.Count - 1; i > 0; i--)
+            {
+                var j = random.Next(i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
         }
 
         private void SetStatus(string msg, MessageType type)

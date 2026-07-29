@@ -7,6 +7,14 @@ namespace FishFramework
 {
     public class UGUIEditor : MonoBehaviour
     {
+        /// <summary>项目默认 TMP 字体（创建 TextMeshPro 时统一使用）。</summary>
+        public const string DefaultTmpFontPath = "Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset";
+
+        private static TMP_FontAsset LoadDefaultTmpFont()
+        {
+            return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(DefaultTmpFontPath);
+        }
+
         /// <summary>  
         /// 第一次创建UI元素时，没有canvas、EventSystem所有要生成，Canvas作为父节点  
         /// 之后再空的位置上建UI元素会自动添加到Canvas下  
@@ -53,7 +61,7 @@ namespace FishFramework
             txtObj.GetComponent<RectTransform>().localScale = Vector3.one;
             txtObj.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 30);
             var text = txtObj.GetComponent<TextMeshProUGUI>();
-            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset");
+            text.font = LoadDefaultTmpFont();
             text.raycastTarget = false;
             text.richText = false;
             text.fontSize = 24;
@@ -79,7 +87,7 @@ namespace FishFramework
             txtObj.GetComponent<RectTransform>().localScale = Vector3.one;
             txtObj.GetComponent<RectTransform>().sizeDelta = new Vector2(100, 30);
             var text = txtObj.GetComponent<TextMeshProUGUI>();
-            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset");
+            text.font = LoadDefaultTmpFont();
             text.raycastTarget = false;
             text.richText = false;
             text.fontSize = 24;
@@ -168,7 +176,7 @@ namespace FishFramework
             txtObj.GetComponent<RectTransform>().anchorMax = Vector2.one;
             txtObj.GetComponent<RectTransform>().sizeDelta = Vector2.zero;
             var text = txtObj.GetComponent<TextMeshProUGUI>();
-            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset");
+            text.font = LoadDefaultTmpFont();
             text.raycastTarget = false;
             text.richText = false;
             text.fontSize = 24;
@@ -253,7 +261,7 @@ namespace FishFramework
             txtObj.GetComponent<RectTransform>().anchorMax = Vector2.one;
             txtObj.GetComponent<RectTransform>().sizeDelta = Vector2.zero;
             var text = txtObj.GetComponent<TextMeshProUGUI>();
-            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset");
+            text.font = LoadDefaultTmpFont();
             text.raycastTarget = false;
             text.richText = false;
             text.fontSize = 24;

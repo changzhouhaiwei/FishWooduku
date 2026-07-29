@@ -1,0 +1,72 @@
+{
+  "id": 10,
+  "size": 6,
+  "hintCount": 5,
+  "hasUniqueSolution": true,
+  "solutionCount": 1,
+  "colors": [
+  {
+    "id": 0,
+    "name": "色0",
+    "hex": "#8C5938",
+    "enabled": true
+  },
+  {
+    "id": 1,
+    "name": "色1",
+    "hex": "#D9B240",
+    "enabled": true
+  },
+  {
+    "id": 2,
+    "name": "色2",
+    "hex": "#E68CA6",
+    "enabled": true
+  },
+  {
+    "id": 3,
+    "name": "色3",
+    "hex": "#73B273",
+    "enabled": true
+  },
+  {
+    "id": 4,
+    "name": "色6",
+    "hex": "#6699CC",
+    "enabled": true
+  },
+  {
+    "id": 5,
+    "name": "色10",
+    "hex": "#CC804C",
+    "enabled": true
+  }
+],
+  "regions": [0, 5, 5, 5, 1, 1, 3, 5, 5, 5, 5, 1, 3, 3, 5, 5, 5, 5, 3, 3, 4, 4, 4, 5, 3, 3, 2, 4, 4, 5, 3, 3, 2, 4, 4, 5],
+  "solutionCols": [0, 5, 3, 1, 4, 2],
+  "solutionCells": [
+  {
+    "r": 0,
+    "c": 0
+  },
+  {
+    "r": 1,
+    "c": 5
+  },
+  {
+    "r": 2,
+    "c": 3
+  },
+  {
+    "r": 3,
+    "c": 1
+  },
+  {
+    "r": 4,
+    "c": 4
+  },
+  {
+    "r": 5,
+    "c": 2
+  }
+]}
