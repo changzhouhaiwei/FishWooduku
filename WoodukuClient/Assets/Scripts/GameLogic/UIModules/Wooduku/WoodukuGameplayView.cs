@@ -20,9 +20,9 @@ namespace GameLogic.Wooduku
 
         public static WoodukuGameplayView Instance { get; private set; }
 
-        [SerializeField] private Button backButton;
-        [SerializeField] private Button winBackButton;
-        [SerializeField] private Button winNextButton;
+        [SerializeField] private TButton backButton;
+        [SerializeField] private TButton winBackButton;
+        [SerializeField] private TButton winNextButton;
         [SerializeField] private TextMeshProUGUI progressLabel;
         [SerializeField] private TextMeshProUGUI levelLabel;
         [SerializeField] private RectTransform boardRoot;
@@ -586,10 +586,10 @@ namespace GameLogic.Wooduku
             }
         }
 
-        private Button FindButton(string objectName)
+        private TButton FindButton(string objectName)
         {
             var t = FindTransform(objectName);
-            return t != null ? t.GetComponent<Button>() : null;
+            return t != null ? t.GetComponent<TButton>() : null;
         }
 
         private TextMeshProUGUI FindTmp(string objectName)

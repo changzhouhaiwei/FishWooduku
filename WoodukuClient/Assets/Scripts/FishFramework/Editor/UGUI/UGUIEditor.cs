@@ -9,10 +9,58 @@ namespace FishFramework
     {
         /// <summary>项目默认 TMP 字体（创建 TextMeshPro 时统一使用）。</summary>
         public const string DefaultTmpFontPath = "Assets/GameRes/Fonts/Arial-Unicode-Bold-RSDF.asset";
+        private const string GameResPath = "Assets/GameRes";
+        private const string UiRootPrefabPath = "Assets/GameRes/Prefabs/Main/UIRoot.prefab";
+        private const string UiBlockerName = "[UIBlocker]";
 
         private static TMP_FontAsset LoadDefaultTmpFont()
         {
             return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(DefaultTmpFontPath);
+        }
+
+        [MenuItem("FishFramework/UI/检查普通 Button")]
+        private static void ValidateGameButtons()
+        {
+            var prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { GameResPath });
+            var invalidCount = 0;
+
+            foreach (var prefabGuid in prefabGuids)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(prefabGuid);
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                if (prefab == null)
+                {
+                    continue;
+                }
+
+                foreach (var button in prefab.GetComponentsInChildren<Button>(true))
+                {
+                    if (button.GetType() != typeof(Button) || IsUiBlocker(assetPath, button))
+                    {
+                        continue;
+                    }
+
+                    invalidCount++;
+                    var transformPath = AnimationUtility.CalculateTransformPath(button.transform, prefab.transform);
+                    Debug.LogError(
+                        $"[UGUI] 发现普通 Button，请替换为 TButton：{assetPath} ({transformPath})",
+                        prefab);
+                }
+            }
+
+            if (invalidCount == 0)
+            {
+                Debug.Log("[UGUI] 检查完成：GameRes 中的玩家可见按钮均使用 TButton。");
+            }
+            else
+            {
+                Debug.LogError($"[UGUI] 检查完成：共发现 {invalidCount} 个普通 Button。");
+            }
+        }
+
+        private static bool IsUiBlocker(string assetPath, Button button)
+        {
+            return assetPath == UiRootPrefabPath && button.gameObject.name == UiBlockerName;
         }
 
         /// <summary>  

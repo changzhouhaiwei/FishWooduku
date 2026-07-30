@@ -11,7 +11,7 @@ namespace GameLogic.MainMenu
     /// </summary>
     public sealed class UIMainMenuHost : UIView
     {
-        private Button _playButton;
+        private TButton _playButton;
         private TextMeshProUGUI _playLevelLabel;
         private bool _bound;
 
@@ -55,7 +55,7 @@ namespace GameLogic.MainMenu
 
         protected override void OnCreating()
         {
-            _playButton = FindChildRect("Play Button")?.GetComponent<Button>();
+            _playButton = FindChildRect("Play Button")?.GetComponent<TButton>();
             _playLevelLabel = FindChildRect("Play Text")?.GetComponent<TextMeshProUGUI>();
             if (_playButton != null)
             {
