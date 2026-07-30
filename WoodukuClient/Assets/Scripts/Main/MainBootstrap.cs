@@ -30,6 +30,9 @@ public class MainBootstrap : MonoBehaviour
 
         yield return gameModule.StartCoroutine(gameModule.Initialize());
 
+        I2LocalizeMgr.SetLanguage(GameModule.Setting.GetCurrentLanguage());
+        I2LocalizeMgr.Instance.UpdateSources();
+
         Debug.Log("[MainBootstrap] Framework ready, loading LoginScene...");
         SceneLoaderHelper.LoadSceneAsync(ScenePaths.LoginScene);
     }

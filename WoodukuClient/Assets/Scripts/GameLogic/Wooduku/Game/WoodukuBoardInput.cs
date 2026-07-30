@@ -13,12 +13,13 @@ namespace GameLogic.Wooduku
     public sealed class WoodukuBoardInput : MonoBehaviour,
         IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
-        public const float DoubleClickSeconds = 0.28f;
+        public const float DoubleClickSeconds = 0.2f;
         private const float DragThresholdPx = 12f;
 
         private WoodukuGameSession _session;
         private Func<Vector2, bool, (int r, int c, bool ok)> _screenToCell;
         private Action<int, int> _onWrongConfirm;
+        private Action<int, int> _onExcludeClicked;
         private Action _onVisualRefresh;
 
         private bool _pointerDown;
@@ -38,11 +39,13 @@ namespace GameLogic.Wooduku
             WoodukuGameSession session,
             Func<Vector2, bool, (int r, int c, bool ok)> screenToCell,
             Action<int, int> onWrongConfirm,
+            Action<int, int> onExcludeClicked,
             Action onVisualRefresh)
         {
             _session = session;
             _screenToCell = screenToCell;
             _onWrongConfirm = onWrongConfirm;
+            _onExcludeClicked = onExcludeClicked;
             _onVisualRefresh = onVisualRefresh;
         }
 
@@ -176,6 +179,10 @@ namespace GameLogic.Wooduku
             if (_session.TryToggleExclude(r, c))
             {
                 _onVisualRefresh?.Invoke();
+                if (_session.GetMark(r, c) == WoodukuCellMark.Exclude)
+                {
+                    _onExcludeClicked?.Invoke(r, c);
+                }
             }
         }
 

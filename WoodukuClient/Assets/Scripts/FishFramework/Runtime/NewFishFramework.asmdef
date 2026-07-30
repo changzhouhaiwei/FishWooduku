@@ -5,7 +5,8 @@
         "YooAsset",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
-        "DOTween.Modules"
+        "DOTween.Modules",
+        "I2Localization.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

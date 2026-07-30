@@ -1,4 +1,5 @@
 using System.Collections;
+using DG.Tweening;
 using FishFramework;
 using GameLogic.MainMenu;
 using TMPro;
@@ -16,6 +17,7 @@ namespace GameLogic.Wooduku
         public const string PrefabPath = "Assets/GameRes/Prefabs/Wooduku/UIWoodukuGame.prefab";
         private const string CatSpritePath = "Assets/GameRes/ImageAtlas/GamePlay/wooduku_mark_cat.png";
         private const string ExcludeSpritePath = "Assets/GameRes/ImageAtlas/GamePlay/wooduku_mark_x.png";
+        private const float ExcludeAppearSeconds = 0.18f;
         private const int SortingOrder = 60;
 
         public static WoodukuGameplayView Instance { get; private set; }
@@ -206,6 +208,8 @@ namespace GameLogic.Wooduku
 
         private void TeardownSession()
         {
+            StopCellMarkAnimations();
+
             if (_session != null)
             {
                 _session.Changed -= RefreshHud;
@@ -381,7 +385,7 @@ namespace GameLogic.Wooduku
                 _boardInput = boardRoot.gameObject.AddComponent<WoodukuBoardInput>();
             }
 
-            _boardInput.Bind(_session, ScreenToCell, OnWrongConfirm, () =>
+            _boardInput.Bind(_session, ScreenToCell, OnWrongConfirm, PlayExcludeAppear, () =>
             {
                 RefreshCellMarks();
                 RefreshHud();
@@ -461,6 +465,7 @@ namespace GameLogic.Wooduku
                         continue;
                     }
 
+                    StopCellMarkAnimation(view);
                     var mark = _session.GetMark(r, c);
                     switch (mark)
                     {
@@ -483,6 +488,66 @@ namespace GameLogic.Wooduku
                     view.Background.color = view.BaseColor;
                 }
             }
+        }
+
+        private void PlayExcludeAppear(int r, int c)
+        {
+            if (_cells == null || _session == null || _session.GetMark(r, c) != WoodukuCellMark.Exclude)
+            {
+                return;
+            }
+
+            var i = r * _session.Size + c;
+            if (i < 0 || i >= _cells.Length || _cells[i]?.Mark == null)
+            {
+                return;
+            }
+
+            var view = _cells[i];
+            StopCellMarkAnimation(view);
+            view.Mark.rectTransform.localScale = Vector3.zero;
+            view.Mark.color = new Color(1f, 1f, 1f, 0f);
+
+            var sequence = DOTween.Sequence()
+                .SetUpdate(true)
+                .SetLink(view.Mark.gameObject);
+            view.MarkTween = sequence;
+            sequence.Append(view.Mark.rectTransform.DOScale(Vector3.one, ExcludeAppearSeconds)
+                .SetEase(Ease.OutCubic));
+            sequence.Join(view.Mark.DOFade(1f, ExcludeAppearSeconds * 0.75f));
+            sequence.OnComplete(() =>
+            {
+                if (view.MarkTween == sequence)
+                {
+                    view.MarkTween = null;
+                }
+            });
+        }
+
+        private void StopCellMarkAnimations()
+        {
+            if (_cells == null)
+            {
+                return;
+            }
+
+            foreach (var view in _cells)
+            {
+                StopCellMarkAnimation(view);
+            }
+        }
+
+        private static void StopCellMarkAnimation(CellView view)
+        {
+            if (view?.Mark == null)
+            {
+                return;
+            }
+
+            view.MarkTween?.Kill();
+            view.MarkTween = null;
+            view.Mark.rectTransform.localScale = Vector3.one;
+            view.Mark.color = Color.white;
         }
 
         private void OnWrongConfirm(int r, int c)
@@ -622,6 +687,7 @@ namespace GameLogic.Wooduku
             public Image Background;
             public Image Mark;
             public Color BaseColor;
+            public Tween MarkTween;
         }
     }
 }

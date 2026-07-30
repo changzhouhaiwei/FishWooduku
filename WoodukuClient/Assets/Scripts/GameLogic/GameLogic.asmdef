@@ -7,7 +7,8 @@
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "DOTween.Modules",
-        "Luban.Runtime"
+        "Luban.Runtime",
+        "I2Localization.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
