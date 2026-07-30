@@ -10,3 +10,4 @@
 _sync_robocopy.log
 /WoodukuProfile/output/
 /WoodukuClient/Logs
+*.xapk
